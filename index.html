@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>졸업공연 오디션 순서 관리</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter / Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* 스크롤바 커스터마이징 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- 상단 헤더 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200">
+                    🎬
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">졸업공연 오디션 순서표</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">10점 만점 단일 채점 (자신감, 실력, 적합성) · 현장 진행 관리</p>
+                </div>
+            </div>
+
+            <!-- 전체 진행률 요약 -->
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex flex-col items-end min-w-[160px]">
+                    <div class="flex items-center justify-between w-full text-xs font-semibold mb-1">
+                        <span class="text-slate-500">전체 진행률</span>
+                        <span id="progress-text" class="text-indigo-600">0 / 13팀 완료 (0%)</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                        <div id="progress-bar" class="h-full bg-indigo-600 transition-all duration-300 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- 심사위원 관리, CSV 다운로드 및 결과 복사 버튼 -->
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="openJudgeModal()" title="심사위원 명단 및 인원 설정" class="px-3 py-2 text-xs sm:text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 transition-colors flex items-center gap-1.5">
+                        <span>👨‍⚖️</span>
+                        <span>심사위원 (<span id="header-judge-count">3</span>명)</span>
+                    </button>
+                    <button type="button" onclick="copyResultsToClipboard()" title="결과 표 복사" class="px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl border border-slate-200 transition-colors flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                        <span class="hidden sm:inline">결과 복사</span>
+                    </button>
+                    <button type="button" onclick="downloadCSV()" title="엑셀(CSV) 파일 다운로드" class="px-3 py-2 text-xs sm:text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 transition-colors flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span class="hidden sm:inline">CSV 저장</span>
+                    </button>
+                    <!-- 초기화 버튼 -->
+                    <button type="button" onclick="openResetModal()" data-admin-only="true" class="px-3 py-2 text-xs sm:text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 rounded-xl border border-slate-200 transition-colors flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>초기화</span>
+                    </button>
+                    <!-- 관리자 잠금 / 해제 토글 버튼 -->
+                    <button type="button" id="admin-lock-btn" onclick="toggleAdminLock()" title="관리자 PIN 잠금/해제" class="px-3 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-colors flex items-center gap-1.5 bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100">
+                        <span id="admin-lock-icon">🔒</span>
+                        <span id="admin-lock-label">잠금 중</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 심사위원 채점 전용(관리자 잠금) 안내 배너 -->
+    <div id="admin-lock-banner" class="bg-amber-50/90 border-b border-amber-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900">
+            <div class="flex items-center gap-2 font-medium">
+                <span>🔒</span>
+                <span><strong>심사위원 채점 모드:</strong> 10점 만점 점수(자신감, 실력, 적합성)와 심사위원 이름은 입력·수정할 수 있으며, 순서/명단/곡명·메모 수정 및 초기화는 관리자 잠금 상태입니다. (기본 PIN: <code class="px-1.5 py-0.5 rounded bg-amber-100 font-bold">1234</code>)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openPinModal('unlock')" class="font-bold text-amber-950 underline hover:text-indigo-700">
+                    관리자 해제
+                </button>
+                <span class="text-amber-400">|</span>
+                <button type="button" onclick="openPinModal('change')" class="font-semibold text-amber-800 hover:text-indigo-700">
+                    PIN 변경
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모바일용 진행률 바 -->
+    <div class="md:hidden bg-white px-4 py-2.5 border-b border-slate-200">
+        <div class="flex items-center justify-between text-xs font-semibold mb-1">
+            <span class="text-slate-500">전체 진행률</span>
+            <span id="mobile-progress-text" class="text-indigo-600">0 / 13팀 완료 (0%)</span>
+        </div>
+        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div id="mobile-progress-bar" class="h-full bg-indigo-600 transition-all duration-300 rounded-full" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- 좌측(상단): 현재 진행 전광판 & 오디션 타이머 (5칸) -->
+            <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+
+                <!-- 현재 진행 전광판 카드 -->
+                <section class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-indigo-800/50 relative overflow-hidden">
+                    <!-- 배경 장식 -->
+                    <div class="absolute -top-16 -right-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                                현재 진행 중 (NOW ON STAGE)
+                            </span>
+                            <span id="current-order-badge" class="text-sm font-bold text-indigo-300 bg-white/10 px-3 py-1 rounded-xl">
+                                1번 순서
+                            </span>
+                        </div>
+
+                        <!-- 현재 참가자 정보 대형 표시 -->
+                        <div id="current-stage-display" class="my-5 text-center py-5 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                            <p id="current-class" class="text-xl sm:text-2xl font-bold text-indigo-300 mb-1">6-1</p>
+                            <h2 id="current-name" class="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">전민주</h2>
+                            <div id="current-song-team-box" class="flex flex-wrap items-center justify-center gap-2 mt-2 mb-1.5">
+                                <span id="current-song-badge" class="hidden px-2.5 py-1 rounded-lg bg-indigo-500/30 text-indigo-100 text-xs sm:text-sm font-bold border border-indigo-400/30"></span>
+                                <span id="current-team-badge" class="hidden px-2.5 py-1 rounded-lg bg-emerald-500/25 text-emerald-200 text-xs sm:text-sm font-bold border border-emerald-400/30"></span>
+                            </div>
+                            <p id="current-memo-preview" class="text-xs sm:text-sm text-slate-300 truncate max-w-xs mx-auto min-h-[20px]">메모 없음</p>
+                        </div>
+
+                        <!-- 현재 무대 실시간 심사위원별 10점 만점 단일 항목 점수 입력 패널 -->
+                        <div id="stage-score-panel" class="bg-white/10 rounded-2xl p-4 mb-5 border border-indigo-400/30">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <span class="text-xs font-bold text-indigo-200 flex items-center gap-1.5">
+                                    <span>🏆 심사위원별 10점 만점 · 평균 산출</span>
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <!-- 즉시 심사위원 인원(- / + 및 숫자 직접 입력) 조절기 -->
+                                    <div data-admin-only="true" class="flex items-center bg-slate-950/60 border border-white/15 rounded-lg px-1 py-0.5" title="심사위원 인원 수 즉시 조절 (관리자 전용)">
+                                        <button type="button" onclick="stepJudgeCount(-1)" class="w-6 h-6 rounded-md hover:bg-white/15 text-slate-200 font-black text-xs flex items-center justify-center transition-colors">
+                                            -
+                                        </button>
+                                        <input type="number" id="quick-judge-count-input" min="1" max="20" value="3" onchange="setJudgeCount(this.value)" onkeydown="if(event.key==='Enter') { setJudgeCount(this.value); this.blur(); }" class="w-8 text-center bg-transparent text-xs font-black text-white focus:outline-none">
+                                        <span class="text-[10px] font-bold text-slate-400 pr-1">명</span>
+                                        <button type="button" onclick="stepJudgeCount(1)" class="w-6 h-6 rounded-md hover:bg-white/15 text-slate-200 font-black text-xs flex items-center justify-center transition-colors">
+                                            +
+                                        </button>
+                                    </div>
+                                    <button type="button" data-admin-only="true" onclick="openJudgeModal()" class="text-[11px] font-bold px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/10 transition-colors">
+                                        이름 편집
+                                    </button>
+                                    <span id="stage-avg-badge" class="px-2.5 py-1 rounded-lg bg-amber-400/20 border border-amber-300/40 text-amber-300 text-xs sm:text-sm font-black">
+                                        평균 - / 10
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 단일 채점 기준 설명 -->
+                            <div class="mb-2.5 px-3 py-1.5 rounded-xl bg-slate-950/50 border border-white/10 text-[11px] text-indigo-100 flex items-center justify-between gap-2">
+                                <span>📌 <strong>단일 항목 (10점 만점):</strong> 자신감, 실력, 적합성</span>
+                                <span class="text-slate-400 shrink-0">0.5점 단위</span>
+                            </div>
+
+                            <!-- 심사위원 선택 탭 -->
+                            <div id="stage-judge-tabs" class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2.5">
+                                <!-- JS로 심사위원 탭 렌더링 -->
+                            </div>
+
+                            <!-- 선택된 심사위원(또는 전체 심사위원)의 10점 만점 입력 영역 -->
+                            <div id="stage-judge-inputs" class="space-y-2">
+                                <!-- JS로 심사위원별 10점 입력 칸 렌더링 -->
+                            </div>
+
+                            <div class="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-300">
+                                <span id="stage-judge-status">단일 항목(자신감, 실력, 적합성) 10점 만점 평균 계산</span>
+                                <span id="stage-sum-preview" class="font-bold text-indigo-200">선택 심사위원 점수: - / 10</span>
+                            </div>
+                        </div>
+
+                        <!-- 다음 순서 미리보기 박스 -->
+                        <div class="bg-white/10 rounded-2xl p-4 mb-5 flex items-center justify-between border border-white/10">
+                            <div class="flex items-center gap-3">
+                                <span class="px-2.5 py-1 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
+                                    다음 대기
+                                </span>
+                                <div>
+                                    <p id="next-participant-text" class="font-bold text-base sm:text-lg text-white">
+                                        2번 · 6-2 김주희
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-slate-300 hidden sm:inline">준비해 주세요</span>
+                        <!-- 순서 이동 컨트롤 버튼 (완료와 무관하게 언제든 이전/다음 팀 탐색 + 별도 완료 토글) -->
+                        <div class="grid grid-cols-12 gap-2.5">
+                            <button type="button" onclick="prevParticipant()" class="col-span-4 py-3.5 px-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-sm transition-all flex items-center justify-center gap-1 border border-white/10">
+                                <span>◀ 이전</span>
+                            </button>
+                            <button type="button" onclick="nextParticipant()" class="col-span-4 py-3.5 px-3 rounded-2xl bg-indigo-500 hover:bg-indigo-400 active:scale-95 text-white font-extrabold text-sm transition-all flex items-center justify-center gap-1 shadow-lg shadow-indigo-950/40">
+                                <span>다음 ▶</span>
+                            </button>
+                            <button type="button" id="stage-complete-toggle-btn" onclick="toggleCurrentComplete()" data-admin-only="true" class="col-span-4 py-3.5 px-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-950/50 transition-all flex items-center justify-center gap-1">
+                                <span>✓ 완료 처리</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 오디션 타이머 카드 -->
+                <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <span class="text-lg">⏱️</span>
+                            <span>오디션 타이머</span>
+                        </h3>
+                        <span id="timer-mode-label" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">
+                            카운트업 (경과 시간)
+                        </span>
+                    </div>
+
+                    <!-- 심사위원 이름 바로 수정 바 (접속자 누구나 가능) -->
+                    <div class="mb-4 p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-extrabold text-indigo-900 flex items-center gap-1">
+                                <span>✏️</span>
+                                <span>심사위원 이름 수정</span>
+                            </span>
+                            <span class="text-[11px] font-semibold text-indigo-600">누구나 바로 편집 가능</span>
+                        </div>
+                        <div id="quick-judge-names-list" class="flex flex-wrap gap-1.5">
+                            <!-- JS로 심사위원 이름 입력 칩 렌더링 -->
+                        </div>
+                    </div>
+
+                    <!-- 시간 표시부 -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-center mb-4">
+                        <div id="timer-display" class="text-4xl sm:text-5xl font-black font-mono tracking-wider text-slate-900">
+                            00:00
+                        </div>
+                    </div>
+
+                    <!-- 프리셋 버튼 (카운트다운 설정) -->
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <button type="button" onclick="setTimerPreset(0)" class="py-2 px-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border border-slate-200 transition-colors">
+                            0초(스톱워치)
+                        </button>
+                        <button type="button" onclick="setTimerPreset(60)" class="py-2 px-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border border-slate-200 transition-colors">
+                            1분 제한
+                        </button>
+                        <button type="button" onclick="setTimerPreset(120)" class="py-2 px-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border border-slate-200 transition-colors">
+                            2분 제한
+                        </button>
+                        <button type="button" onclick="setTimerPreset(180)" class="py-2 px-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 border border-slate-200 transition-colors">
+                            3분 제한
+                        </button>
+                    </div>
+
+                    <!-- 타이머 조작 버튼 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" id="timer-toggle-btn" onclick="toggleTimer()" class="py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-colors shadow-sm">
+                            시작
+                        </button>
+                        <button type="button" onclick="resetTimer()" class="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors">
+                            리셋
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- 우측(하단): 전체 순서 명단 관리 리스트 (7칸) -->
+            <div class="lg:col-span-7 space-y-4">
+
+                <!-- 상단 필터 및 참가자 추가 폼 -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 text-base sm:text-lg">전체 출연 순서 명단</h3>
+                            <p id="list-guide-text" class="text-xs text-slate-500">10점 만점 단일 항목(자신감, 실력, 적합성) 및 심사위원 이름을 입력할 수 있습니다.</p>
+                        </div>
+                        <button type="button" onclick="toggleAddForm()" data-admin-only="true" class="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 shrink-0 border border-indigo-200/60">
+                            <span>+ 참가자 추가</span>
+                        </button>
+                    </div>
+
+                    <!-- 숨겨진 참가자 추가 입력 폼 -->
+                    <div id="add-participant-form" class="hidden py-4 border-b border-slate-100">
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                            <input type="text" id="new-class-input" placeholder="학급 (예: 6-1)" class="sm:col-span-3 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="new-name-input" placeholder="대표 이름" class="sm:col-span-4 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="new-song-input" placeholder="🎵 곡명 (선택)" class="sm:col-span-5 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="new-team-input" placeholder="👥 함께하는 팀원 (선택)" class="sm:col-span-5 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" id="new-memo-input" placeholder="📝 심사 메모 (선택)" class="sm:col-span-5 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" onclick="addParticipant()" class="sm:col-span-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-colors">
+                                등록
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 상태 필터 탭 및 정렬 전환 버튼 -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-4">
+                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                            <button type="button" onclick="setFilter('all')" id="filter-all" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white transition-colors shrink-0">
+                                전체 (<span id="count-all">13</span>)
+                            </button>
+                            <button type="button" onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">
+                                대기 중 (<span id="count-waiting">12</span>)
+                            </button>
+                            <button type="button" onclick="setFilter('completed')" id="filter-completed" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">
+                                완료 (<span id="count-completed">0</span>)
+                            </button>
+                            <button type="button" onclick="setFilter('hold')" id="filter-hold" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0">
+                                결석·보류 (<span id="count-hold">0</span>)
+                            </button>
+                        </div>
+
+                        <!-- 순서 보기 vs 순위(점수 높은 순) 보기 토글 -->
+                        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto shrink-0">
+                            <button type="button" onclick="setSortMode('order')" id="sort-order-btn" class="px-3 py-1 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition-all">
+                                순서대로 보기
+                            </button>
+                            <button type="button" onclick="setSortMode('rank')" id="sort-rank-btn" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1">
+                                <span>🏆 점수 순위 보기</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 점수 요약 바 (채점 인원 및 10점 만점 평균 점수 표시) -->
+                    <div id="score-summary-bar" class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span>채점 완료: <strong id="scored-count-text" class="text-indigo-600">0팀</strong></span>
+                            <span>평균 점수: <strong id="avg-score-text" class="text-slate-900">-</strong></span>
+                            <span class="text-slate-400">· 기준: 자신감, 실력, 적합성 (10점)</span>
+                        </div>
+                        <span id="top-scorer-text" class="font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200/70">최고 평균: 집계 전</span>
+                    </div>
+                </div>
+
+                <!-- 참가자 리스트 컨테이너 -->
+                <div id="participant-list" class="space-y-3">
+                    <!-- 자바스크립트로 카드 렌더링 -->
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 토스트 알림 메시지 박스 -->
+    <div id="toast-box" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 translate-y-4">
+        <div class="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-2 border border-slate-700">
+            <span id="toast-icon">✅</span>
+            <span id="toast-message">저장되었습니다.</span>
+        </div>
+    </div>
+
+    <!-- 심사위원 설정 모달 -->
+    <div id="judge-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl">
+                        👨‍⚖️
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-slate-900">심사위원 설정</h3>
+                        <p class="text-xs text-slate-500">10점 만점(자신감, 실력, 적합성) 평균이 자동 계산됩니다.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeJudgeModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100">✕</button>
+            </div>
+
+            <!-- 새 심사위원 추가 입력 -->
+            <div data-admin-only="true" class="flex gap-2 mb-4">
+                <input type="text" id="new-judge-name" placeholder="새 심사위원 이름 (예: 음악선생님)" onkeydown="if(event.key==='Enter') addJudge()" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="button" onclick="addJudge()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shrink-0 transition-colors">
+                    + 추가
+                </button>
+            </div>
+
+            <!-- 등록된 심사위원 목록 -->
+            <div id="judge-manage-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 mb-5">
+                <!-- JS 렌더링 -->
+            </div>
+
+            <button type="button" onclick="closeJudgeModal()" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-colors">
+                완료
+            </button>
+        </div>
+    </div>
+
+    <!-- 초기화 확인 모달 -->
+    <div id="reset-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl">
+                    🔄
+                </div>
+                <div>
+                    <h3 class="text-lg font-extrabold text-slate-900">명단 및 기록 초기화</h3>
+                    <p class="text-xs text-slate-500">초기 13명 대표 명단으로 되돌립니다.</p>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 mb-5">
+                입력한 곡명, 팀원, 심사위원 점수 및 메모가 모두 초기화됩니다. 계속하시겠습니까?
+            </p>
+            <div class="grid grid-cols-2 gap-2.5">
+                <button type="button" onclick="closeResetModal()" class="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors">
+                    취소
+                </button>
+                <button type="button" onclick="confirmReset()" class="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm transition-colors">
+                    초기화 실행
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 관리자 PIN 인증 / 변경 모달 -->
+    <div id="pin-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">
+                        🔐
+                    </div>
+                    <div>
+                        <h3 id="pin-modal-title" class="text-lg font-extrabold text-slate-900">관리자 모드 해제</h3>
+                        <p id="pin-modal-subtitle" class="text-xs text-slate-500">관리자 PIN을 입력하세요 (기본: 1234)</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closePinModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100">✕</button>
+            </div>
+
+            <div id="pin-current-wrap" class="hidden mb-3">
+                <label class="block text-xs font-bold text-slate-600 mb-1">기존 PIN</label>
+                <input type="password" id="pin-current-input" maxlength="12" placeholder="기존 PIN 입력" onkeydown="if(event.key==='Enter') submitPinModal()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="mb-4">
+                <label id="pin-main-label" class="block text-xs font-bold text-slate-600 mb-1">관리자 PIN</label>
+                <input type="password" id="pin-main-input" maxlength="12" placeholder="PIN 입력 (예: 1234)" onkeydown="if(event.key==='Enter') submitPinModal()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <p id="pin-error-msg" class="hidden text-xs font-bold text-rose-600 mt-1.5"></p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                <button type="button" onclick="closePinModal()" class="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors">
+                    취소
+                </button>
+                <button type="button" onclick="submitPinModal()" id="pin-submit-btn" class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-colors">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 단일 평가 항목 기준 (10점 만점)
+        const SINGLE_CRITERION = {
+            key: 'overall',
+            label: '자신감, 실력, 적합성 (10점 만점)',
+            max: 10
+        };
+
+        // 기본 심사위원 명단
+        const DEFAULT_JUDGES = [
+            { id: 'j1', name: '심사위원 1' },
+            { id: 'j2', name: '심사위원 2' },
+            { id: 'j3', name: '심사위원 3' }
+        ];
+
+        // 초기 참가자 명단 데이터 (judgeScores: { [judgeId]: number | null }, completed: boolean)
+        const INITIAL_PARTICIPANTS = [
+            { id: 'p1', className: '6-1', name: '전민주', song: 'BO PEEP BO PEEP', teamMembers: '6-1 이다빈', status: 'current', completed: false, memo: '', judgeScores: {} },
+            { id: 'p2', className: '6-2', name: '김주희', song: 'NEON', teamMembers: '6-2 김현진', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p3', className: '6-3', name: '정수아', song: '퇴사할게요', teamMembers: '', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p4', className: '6-3', name: '김민하', song: '유리구슬', teamMembers: '6-3 이서은 6-6 김하윤', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p5', className: '6-4', name: '장호재', song: '굿보이 굳배드, 위키드, 배드', teamMembers: '', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p6', className: '6-5', name: '김연우', song: 'NEON', teamMembers: '6-5 최율민', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p7', className: '6-7', name: '박민아', song: '살풀이춤', teamMembers: '', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p8', className: '6-8', name: '김보민', song: '퇴사할게여', teamMembers: '6-3 김이안', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p9', className: '6-8', name: '윤효정', song: '붉은노을', teamMembers: '6-1 박서하 안채원 6-3 김아정 홍이주 6-5 조효주 6-7 이채윤 우서율 6-8 민시은 김민아', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p10', className: '6-8', name: '허연우', song: '너에게 난 나에게 넌', teamMembers: '6-8 권하빈 성시원 윤하윤', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p11', className: '6-8', name: '최연아', song: '프리티걸', teamMembers: '6-2 황아름 6-7 이채윤 6-8 전예지 이하민', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p12', className: '6-9', name: '윤채이', song: '만찬가, 소원을 말해봐', teamMembers: '', status: 'waiting', completed: false, memo: '', judgeScores: {} },
+            { id: 'p13', className: '6-9', name: '이지율', song: '프리티걸', teamMembers: '6-4 한윤지 6-6 김민채', status: 'waiting', completed: false, memo: '', judgeScores: {} }
+        ];
+
+        const STORAGE_KEY = 'graduation_audition_data_v7_single10_lineup';
+        const JUDGES_STORAGE_KEY = 'graduation_audition_judges_v6_single10';
+        const ADMIN_LOCK_KEY = 'graduation_audition_admin_locked_v1';
+        const ADMIN_PIN_KEY = 'graduation_audition_admin_pin_v1';
+        const DEFAULT_ADMIN_PIN = '1234';
+
+        let isAdminLocked = true; // 기본값: 접속자(심사위원) 채점 전용 잠금 모드
+        let adminPin = DEFAULT_ADMIN_PIN;
+        let pinModalMode = 'unlock'; // 'unlock' | 'change'
+
+        let judges = [];
+        let activeJudgeId = 'all'; // 'all' 또는 특정 judge.id
+        let participants = [];
+        let currentFilter = 'all';
+        let sortMode = 'order'; // 'order' | 'rank'
+
+        // 타이머 상태 변수
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let timerPreset = 0;
+        let isTimerRunning = false;
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                loadData();
+                renderAll();
+                updateTimerDisplay();
+            } catch (err) {
+                console.error('초기화 오류:', err);
+            }
+        });
+
+        // 10점 만점 범위 보정 (소수점 첫째 자리까지)
+        function clampScore10(num) {
+            const v = Number(num);
+            if (isNaN(v)) return null;
+            const bounded = Math.max(0, Math.min(10, v));
+            return Math.round(bounded * 10) / 10;
+        }
+
+        // 심사위원 1명의 점수 정규화 (이전 4항목 객체나 100점 값도 10점 만점으로 안전 변환)
+        function normalizeSingleJudgeScore(entry) {
+            if (entry === undefined || entry === null || entry === '') return null;
+            if (typeof entry === 'number' || typeof entry === 'string') {
+                const n = Number(entry);
+                if (isNaN(n)) return null;
+                return clampScore10(n > 10 ? n / 10 : n);
+            }
+            if (typeof entry === 'object') {
+                if (entry.overall !== undefined && entry.overall !== null && entry.overall !== '') {
+                    return clampScore10(entry.overall);
+                }
+                const keys = ['skill', 'expression', 'completeness', 'manner'];
+                let sum = 0;
+                let hasAny = false;
+                keys.forEach(k => {
+                    if (entry[k] !== undefined && entry[k] !== null && entry[k] !== '' && !isNaN(Number(entry[k]))) {
+                        sum += Number(entry[k]);
+                        hasAny = true;
+                    }
+                });
+                if (!hasAny) return null;
+                return clampScore10(sum / 10);
+            }
+            return null;
+        }
+
+        function normalizeParticipant(p) {
+            const rawMap = (p && p.judgeScores && typeof p.judgeScores === 'object') ? p.judgeScores : {};
+            const judgeScores = {};
+            Object.keys(rawMap).forEach(jid => {
+                judgeScores[jid] = normalizeSingleJudgeScore(rawMap[jid]);
+            });
+            const status = (p && p.status) || 'waiting';
+            const completed = (p && typeof p.completed === 'boolean') ? p.completed : (status === 'completed');
+            return {
+                id: (p && p.id) || ('p_' + Math.random().toString(36).slice(2, 9)),
+                className: (p && p.className) || '기타',
+                name: (p && p.name) || '',
+                song: (p && p.song) || '',
+                teamMembers: (p && p.teamMembers) || '',
+                status,
+                completed,
+                memo: (p && p.memo) || '',
+                judgeScores
+            };
+        }
+
+        // 로컬 스토리지에서 데이터 불러오기
+        function loadData() {
+            try {
+                const savedPin = localStorage.getItem(ADMIN_PIN_KEY);
+                if (savedPin && String(savedPin).trim().length > 0) {
+                    adminPin = String(savedPin).trim();
+                }
+                const savedLock = localStorage.getItem(ADMIN_LOCK_KEY);
+                if (savedLock !== null) {
+                    isAdminLocked = savedLock === 'true';
+                } else {
+                    isAdminLocked = true;
+                }
+            } catch (e) {
+                console.error('잠금 상태 로드 오류:', e);
+            }
+
+            try {
+                const savedJudges = localStorage.getItem(JUDGES_STORAGE_KEY);
+                if (savedJudges) {
+                    const parsedJudges = JSON.parse(savedJudges);
+                    if (Array.isArray(parsedJudges) && parsedJudges.length > 0) {
+                        judges = parsedJudges;
+                    }
+                }
+            } catch (e) {
+                console.error('심사위원 로드 오류:', e);
+            }
+            if (judges.length === 0) {
+                judges = JSON.parse(JSON.stringify(DEFAULT_JUDGES));
+            }
+
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        participants = parsed.map(normalizeParticipant);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.error('데이터 로드 오류:', e);
+            }
+            participants = JSON.parse(JSON.stringify(INITIAL_PARTICIPANTS));
+            saveData();
+        }
+
+        // 로컬 스토리지에 저장
+        function saveData() {
+            try {
+                localStorage.setItem(JUDGES_STORAGE_KEY, JSON.stringify(judges));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(participants));
+            } catch (e) {
+                console.error('데이터 저장 오류:', e);
+            }
+        }
+
+        // 특정 심사위원의 참가자 점수(0~10점) 반환
+        function getJudgeScore10(participant, judgeId) {
+            if (!participant || !participant.judgeScores) return null;
+            const raw = participant.judgeScores[judgeId];
+            if (raw === undefined || raw === null || raw === '' || isNaN(Number(raw))) return null;
+            return clampScore10(Number(raw));
+        }
+
+        // 참가자의 10점 만점 평균 및 채점 인원 계산
+        function getParticipantScoreStats(participant) {
+            const scores = [];
+            judges.forEach(j => {
+                const s = getJudgeScore10(participant, j.id);
+                if (s !== null) scores.push(s);
+            });
+            if (scores.length === 0) {
+                return { avg: null, sum: 0, count: 0, totalJudges: judges.length };
+            }
+            const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100;
+            const avg = Math.round((sum / scores.length) * 100) / 100;
+            return { avg, sum, count: scores.length, totalJudges: judges.length };
+        }
+
+        // 토스트 알림
+        let toastTimeout = null;
+        function showToast(message, icon = '✅') {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-message').textContent = message;
+            document.getElementById('toast-icon').textContent = icon;
+            box.classList.remove('opacity-0', 'translate-y-4');
+            box.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                box.classList.remove('opacity-100', 'translate-y-0');
+                box.classList.add('opacity-0', 'translate-y-4');
+            }, 2200);
+        }
+
+        // 전체 UI 렌더링
+        function renderAll() {
+            const headerJudgeCount = document.getElementById('header-judge-count');
+            if (headerJudgeCount) headerJudgeCount.textContent = judges.length;
+            const quickCountInput = document.getElementById('quick-judge-count-input');
+            if (quickCountInput && document.activeElement !== quickCountInput) {
+                quickCountInput.value = judges.length;
+            }
+            renderQuickJudgeNameEditors();
+            renderStageBoard();
+            renderProgress();
+            renderScoreSummary();
+            renderList();
+            applyAdminLockUI();
+        }
+
+        // 접속자 누구나 심사위원 이름을 바로 수정할 수 있는 입력 칩
+        function renderQuickJudgeNameEditors() {
+            const container = document.getElementById('quick-judge-names-list');
+            if (!container) return;
+
+            container.innerHTML = judges.map((j, idx) => {
+                const inputId = `quick-judge-name-input-${j.id}`;
+                return `
+                    <div class="inline-flex items-center gap-1 bg-white border border-indigo-200 focus-within:border-indigo-500 rounded-xl px-2 py-1 shadow-2xs">
+                        <span class="text-[11px] font-extrabold text-indigo-600">${idx + 1}</span>
+                        <input
+                            id="${inputId}"
+                            type="text"
+                            value="${escapeHtml(j.name)}"
+                            oninput="renameJudge('${j.id}', this.value, '${inputId}')"
+                            aria-label="심사위원 ${idx + 1} 이름"
+                            class="w-20 sm:w-24 text-xs font-bold text-slate-800 bg-transparent focus:outline-none"
+                        >
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 관리자 잠금 상태 저장 및 UI 반영
+        function saveAdminLockState() {
+            try {
+                localStorage.setItem(ADMIN_LOCK_KEY, String(isAdminLocked));
+                localStorage.setItem(ADMIN_PIN_KEY, adminPin);
+            } catch (e) {
+                console.error('잠금 상태 저장 오류:', e);
+            }
+        }
+
+        function applyAdminLockUI() {
+            const lockBtn = document.getElementById('admin-lock-btn');
+            const lockIcon = document.getElementById('admin-lock-icon');
+            const lockLabel = document.getElementById('admin-lock-label');
+            const banner = document.getElementById('admin-lock-banner');
+            const guideText = document.getElementById('list-guide-text');
+
+            if (lockBtn && lockIcon && lockLabel) {
+                if (isAdminLocked) {
+                    lockIcon.textContent = '🔒';
+                    lockLabel.textContent = '잠금 중';
+                    lockBtn.className = 'px-3 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-colors flex items-center gap-1.5 bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100';
+                } else {
+                    lockIcon.textContent = '🔓';
+                    lockLabel.textContent = '관리자 해제됨';
+                    lockBtn.className = 'px-3 py-2 text-xs sm:text-sm font-bold rounded-xl border transition-colors flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100';
+                }
+            }
+
+            if (banner) {
+                banner.classList.toggle('hidden', !isAdminLocked);
+            }
+
+            if (guideText) {
+                guideText.textContent = isAdminLocked
+                    ? '10점 만점 단일 항목(자신감, 실력, 적합성) 및 심사위원 이름을 입력할 수 있으며, 순서/명단/곡명·메모 수정 및 초기화는 관리자 잠금 중입니다.'
+                    : '관리자 모드가 활성화되었습니다. 순서, 명단, 심사위원 설정, 곡명·메모 및 초기화를 수정할 수 있습니다.';
+            }
+
+            if (isAdminLocked) {
+                const addForm = document.getElementById('add-participant-form');
+                if (addForm) addForm.classList.add('hidden');
+            }
+
+            document.querySelectorAll('[data-admin-only="true"]').forEach(el => {
+                if (isAdminLocked) {
+                    el.setAttribute('disabled', 'true');
+                    el.setAttribute('aria-disabled', 'true');
+                    el.classList.add('opacity-45', 'pointer-events-none', 'cursor-not-allowed');
+                } else {
+                    el.removeAttribute('disabled');
+                    el.removeAttribute('aria-disabled');
+                    el.classList.remove('opacity-45', 'pointer-events-none', 'cursor-not-allowed');
+                }
+            });
+
+            document.querySelectorAll('[data-admin-edit="true"]').forEach(el => {
+                if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'BUTTON') {
+                    el.disabled = isAdminLocked;
+                }
+                if (isAdminLocked) {
+                    el.classList.add('opacity-65');
+                    if (el.dataset.callCurrent === 'true') {
+                        el.classList.remove('cursor-pointer', 'group');
+                    }
+                } else {
+                    el.classList.remove('opacity-65');
+                    if (el.dataset.callCurrent === 'true') {
+                        el.classList.add('cursor-pointer', 'group');
+                    }
+                }
+            });
+        }
+
+        function toggleAdminLock() {
+            if (isAdminLocked) {
+                openPinModal('unlock');
+            } else {
+                isAdminLocked = true;
+                saveAdminLockState();
+                renderAll();
+                showToast('관리자 잠금 모드가 활성화되었습니다. (10점 채점·이름 수정 가능)', '🔒');
+            }
+        }
+
+        function openPinModal(mode) {
+            pinModalMode = mode || 'unlock';
+            const modal = document.getElementById('pin-modal');
+            const titleEl = document.getElementById('pin-modal-title');
+            const subtitleEl = document.getElementById('pin-modal-subtitle');
+            const currentWrap = document.getElementById('pin-current-wrap');
+            const currentInput = document.getElementById('pin-current-input');
+            const mainLabel = document.getElementById('pin-main-label');
+            const mainInput = document.getElementById('pin-main-input');
+            const errEl = document.getElementById('pin-error-msg');
+            const submitBtn = document.getElementById('pin-submit-btn');
+
+            errEl.classList.add('hidden');
+            errEl.textContent = '';
+            currentInput.value = '';
+            mainInput.value = '';
+
+            if (pinModalMode === 'change') {
+                titleEl.textContent = '관리자 PIN 변경';
+                subtitleEl.textContent = '기존 PIN 확인 후 새 PIN을 설정하세요.';
+                currentWrap.classList.remove('hidden');
+                mainLabel.textContent = '새 관리자 PIN (4자리 이상 권장)';
+                mainInput.placeholder = '새 PIN 입력';
+                submitBtn.textContent = 'PIN 저장';
+            } else {
+                titleEl.textContent = '관리자 모드 해제';
+                subtitleEl.textContent = '관리자 PIN을 입력하세요 (기본: 1234)';
+                currentWrap.classList.add('hidden');
+                mainLabel.textContent = '관리자 PIN';
+                mainInput.placeholder = 'PIN 입력 (예: 1234)';
+                submitBtn.textContent = '잠금 해제';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                if (pinModalMode === 'change') {
+                    currentInput.focus();
+                } else {
+                    mainInput.focus();
+                }
+            }, 30);
+        }
+
+        function closePinModal() {
+            const modal = document.getElementById('pin-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function submitPinModal() {
+            const currentInput = document.getElementById('pin-current-input');
+            const mainInput = document.getElementById('pin-main-input');
+            const errEl = document.getElementById('pin-error-msg');
+
+            if (pinModalMode === 'change') {
+                const oldVal = currentInput.value.trim();
+                const newVal = mainInput.value.trim();
+                if (oldVal !== adminPin) {
+                    errEl.textContent = '기존 PIN이 일치하지 않습니다.';
+                    errEl.classList.remove('hidden');
+                    currentInput.focus();
+                    return;
+                }
+                if (newVal.length < 4) {
+                    errEl.textContent = '새 PIN은 4자리 이상으로 입력해 주세요.';
+                    errEl.classList.remove('hidden');
+                    mainInput.focus();
+                    return;
+                }
+                adminPin = newVal;
+                saveAdminLockState();
+                closePinModal();
+                showToast('관리자 PIN이 변경되었습니다.', '🔐');
+                return;
+            }
+
+            const entered = mainInput.value.trim();
+            if (entered === adminPin) {
+                isAdminLocked = false;
+                saveAdminLockState();
+                closePinModal();
+                renderAll();
+                showToast('관리자 모드가 해제되었습니다. 전체 수정이 가능합니다.', '🔓');
+            } else {
+                errEl.textContent = 'PIN이 올바르지 않습니다. 다시 입력해 주세요.';
+                errEl.classList.remove('hidden');
+                mainInput.focus();
+            }
+        }
+
+        // 1. 상단 전광판 렌더링
+        function renderStageBoard() {
+            const currentIndex = participants.findIndex(p => p.status === 'current');
+            const badgeEl = document.getElementById('current-order-badge');
+            const classEl = document.getElementById('current-class');
+            const nameEl = document.getElementById('current-name');
+            const songBadgeEl = document.getElementById('current-song-badge');
+            const teamBadgeEl = document.getElementById('current-team-badge');
+            const memoEl = document.getElementById('current-memo-preview');
+            const nextEl = document.getElementById('next-participant-text');
+            const scorePanel = document.getElementById('stage-score-panel');
+            const completeToggleBtn = document.getElementById('stage-complete-toggle-btn');
+
+            renderStageJudgeTabs();
+
+            if (currentIndex !== -1) {
+                const current = participants[currentIndex];
+                const doneTag = current.completed ? ' · 완료됨' : '';
+                badgeEl.textContent = `${currentIndex + 1}번 순서 / 총 ${participants.length}팀${doneTag}`;
+                classEl.textContent = current.className;
+                nameEl.textContent = current.name;
+
+                if (completeToggleBtn) {
+                    if (current.completed) {
+                        completeToggleBtn.innerHTML = '<span>✓ 완료됨</span>';
+                        completeToggleBtn.className = 'col-span-4 py-3.5 px-3 rounded-2xl bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-800 font-extrabold text-sm transition-all flex items-center justify-center gap-1';
+                    } else {
+                        completeToggleBtn.innerHTML = '<span>✓ 완료 처리</span>';
+                        completeToggleBtn.className = 'col-span-4 py-3.5 px-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-950/50 transition-all flex items-center justify-center gap-1';
+                    }
+                }
+
+                if (current.song) {
+                    songBadgeEl.textContent = `🎵 ${current.song}`;
+                    songBadgeEl.classList.remove('hidden');
+                } else {
+                    songBadgeEl.classList.add('hidden');
+                }
+
+                if (current.teamMembers) {
+                    teamBadgeEl.textContent = `👥 ${current.teamMembers}`;
+                    teamBadgeEl.classList.remove('hidden');
+                } else {
+                    teamBadgeEl.classList.add('hidden');
+                }
+
+                memoEl.textContent = current.memo ? `📝 ${current.memo}` : '작성된 심사 메모가 없습니다.';
+
+                scorePanel.classList.remove('opacity-40', 'pointer-events-none');
+                renderStageJudgeInputs(current);
+                updateStageScoreStatsDisplay(current);
+
+                if (participants.length > 1) {
+                    const nextIndex = (currentIndex + 1) % participants.length;
+                    const nextP = participants[nextIndex];
+                    const nextSongInfo = nextP.song ? ` · 🎵 ${nextP.song}` : '';
+                    const nextDoneInfo = nextP.completed ? ' (완료)' : '';
+                    nextEl.textContent = `${nextIndex + 1}번 · ${nextP.className} ${nextP.name}${nextSongInfo}${nextDoneInfo}`;
+                } else {
+                    nextEl.textContent = '단독 참가 팀입니다.';
+                }
+            } else {
+                songBadgeEl.classList.add('hidden');
+                teamBadgeEl.classList.add('hidden');
+                scorePanel.classList.add('opacity-40', 'pointer-events-none');
+                document.getElementById('stage-judge-inputs').innerHTML = '';
+                document.getElementById('stage-avg-badge').textContent = '평균 - / 10';
+                document.getElementById('stage-sum-preview').textContent = '선택 심사위원 점수: - / 10';
+
+                if (participants.length > 0) {
+                    badgeEl.textContent = '선택 대기';
+                    classEl.textContent = '팀을 선택해 주세요';
+                    nameEl.textContent = '무대 대기';
+                    memoEl.textContent = '◀ 이전 / 다음 ▶ 버튼 또는 명단 클릭으로 팀을 불러올 수 있습니다.';
+                    nextEl.textContent = `1번 · ${participants[0].className} ${participants[0].name}`;
+                } else {
+                    badgeEl.textContent = '명단 없음';
+                    classEl.textContent = '참가자를 추가해 주세요';
+                    nameEl.textContent = '오디션 대기';
+                    memoEl.textContent = '';
+                    nextEl.textContent = '등록된 참가자가 없습니다.';
+                }
+            }
+        }
+
+        // 상단 전광판 심사위원 탭
+        function renderStageJudgeTabs() {
+            const tabsEl = document.getElementById('stage-judge-tabs');
+            if (!tabsEl) return;
+
+            const allActive = activeJudgeId === 'all';
+            let html = `
+                <button type="button" onclick="selectActiveJudge('all')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-colors ${allActive ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-300 hover:bg-white/20'}">
+                    전체 심사위원 (${judges.length}명)
+                </button>
+            `;
+            judges.forEach(j => {
+                const isActive = activeJudgeId === j.id;
+                html += `
+                    <button type="button" onclick="selectActiveJudge('${j.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-colors ${isActive ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-slate-300 hover:bg-white/20'}">
+                        ${escapeHtml(j.name)}
+                    </button>
+                `;
+            });
+            tabsEl.innerHTML = html;
+        }
+
+        function selectActiveJudge(judgeId) {
+            activeJudgeId = judgeId;
+            renderAll();
+        }
+
+        // 상단 전광판 10점 만점 단일 항목 입력 카드
+        function renderStageJudgeInputs(participant) {
+            const container = document.getElementById('stage-judge-inputs');
+            if (!container) return;
+
+            const targetJudges = activeJudgeId === 'all'
+                ? judges
+                : judges.filter(j => j.id === activeJudgeId);
+
+            container.innerHTML = targetJudges.map(j => {
+                const scoreVal = getJudgeScore10(participant, j.id);
+                const inputVal = scoreVal !== null ? scoreVal : '';
+
+                return `
+                    <div class="bg-slate-950/65 border ${scoreVal !== null ? 'border-amber-400/50' : 'border-white/15'} rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="text-xs font-extrabold text-indigo-200 truncate">${escapeHtml(j.name)}</div>
+                            <div class="text-[10px] text-slate-400 truncate">${SINGLE_CRITERION.label}</div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <input
+                                type="number"
+                                id="stage-s-${j.id}"
+                                min="0"
+                                max="10"
+                                step="0.5"
+                                value="${inputVal}"
+                                placeholder="-"
+                                oninput="handleStageScore10Input('${j.id}', this.value)"
+                                class="w-16 bg-slate-900 border border-white/15 rounded-lg px-2 py-1 text-center text-sm font-black text-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            >
+                            <span class="text-xs font-bold text-slate-400">/ 10</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 상단 전광판 평균/선택 배지 갱신
+        function updateStageScoreStatsDisplay(participant) {
+            const stats = getParticipantScoreStats(participant);
+            const avgBadge = document.getElementById('stage-avg-badge');
+            const statusText = document.getElementById('stage-judge-status');
+            const sumPreview = document.getElementById('stage-sum-preview');
+
+            if (stats.avg !== null) {
+                avgBadge.textContent = `평균 ${stats.avg} / 10`;
+                statusText.textContent = `심사위원 ${stats.count} / ${stats.totalJudges}명 채점 완료 (자신감·실력·적합성)`;
+            } else {
+                avgBadge.textContent = '평균 - / 10';
+                statusText.textContent = `10점 만점 (자신감, 실력, 적합성) · ${stats.totalJudges}명 중 입력 대기`;
+            }
+
+            if (activeJudgeId !== 'all') {
+                const selectedJudge = judges.find(j => j.id === activeJudgeId);
+                const s = getJudgeScore10(participant, activeJudgeId);
+                const jName = selectedJudge ? selectedJudge.name : '선택 심사위원';
+                sumPreview.textContent = `${jName} 점수: ${s !== null ? s + ' / 10' : '- / 10'}`;
+            } else if (judges.length === 1) {
+                const onlyScore = getJudgeScore10(participant, judges[0].id);
+                sumPreview.textContent = `점수: ${onlyScore !== null ? onlyScore + ' / 10' : '- / 10'}`;
+            } else {
+                sumPreview.textContent = stats.count > 0 ? `채점 평균: ${stats.avg} / 10 (${stats.count}명)` : '10점 만점 평균 자동 계산';
+            }
+        }
+
+        // 점수 요약 통계 업데이트 (10점 만점 기준)
+        function renderScoreSummary() {
+            const scoredList = participants
+                .map(p => ({ p, stats: getParticipantScoreStats(p) }))
+                .filter(item => item.stats.avg !== null);
+
+            const countEl = document.getElementById('scored-count-text');
+            const avgEl = document.getElementById('avg-score-text');
+            const topEl = document.getElementById('top-scorer-text');
+
+            countEl.textContent = `${scoredList.length} / ${participants.length}팀`;
+
+            if (scoredList.length === 0) {
+                avgEl.textContent = '-';
+                topEl.textContent = '최고 평균: 집계 전';
+                return;
+            }
+
+            const totalAvgSum = scoredList.reduce((acc, item) => acc + item.stats.avg, 0);
+            const overallAvg = (totalAvgSum / scoredList.length).toFixed(1);
+            avgEl.textContent = `${overallAvg} / 10점`;
+
+            const maxAvg = Math.max(...scoredList.map(item => item.stats.avg));
+            const topScorers = scoredList.filter(item => item.stats.avg === maxAvg);
+            const topNames = topScorers.map(item => `${item.p.className} ${item.p.name}`).join(', ');
+            topEl.textContent = `🥇 최고 평균 ${maxAvg}점 (${topNames})`;
+        }
+
+        // 공동 순위 맵 계산 (10점 만점 평균 기준)
+        function calculateRankMap() {
+            const scored = participants
+                .map(p => ({ id: p.id, avg: getParticipantScoreStats(p).avg }))
+                .filter(item => item.avg !== null)
+                .sort((a, b) => b.avg - a.avg);
+
+            const rankMap = {};
+            let currentRank = 1;
+            for (let i = 0; i < scored.length; i++) {
+                if (i > 0 && scored[i].avg < scored[i - 1].avg) {
+                    currentRank = i + 1;
+                }
+                rankMap[scored[i].id] = currentRank;
+            }
+            return rankMap;
+        }
+
+        // 3. 전체 참가자 리스트 렌더링
+        function renderList() {
+            const listContainer = document.getElementById('participant-list');
+            listContainer.innerHTML = '';
+
+            const rankMap = calculateRankMap();
+
+            let mapped = participants.map((p, index) => {
+                const stats = getParticipantScoreStats(p);
+                return {
+                    ...p,
+                    originalIndex: index,
+                    avgScore: stats.avg,
+                    scoredJudgeCount: stats.count,
+                    rank: rankMap[p.id] || null
+                };
+            });
+
+            mapped = mapped.filter(p => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'waiting') return p.status === 'waiting' || p.status === 'current';
+                return p.status === currentFilter;
+            });
+
+            if (sortMode === 'rank') {
+                mapped.sort((a, b) => {
+                    const hasA = a.avgScore !== null;
+                    const hasB = b.avgScore !== null;
+                    if (hasA && hasB) {
+                        if (b.avgScore !== a.avgScore) return b.avgScore - a.avgScore;
+                        return a.originalIndex - b.originalIndex;
+                    }
+                    if (hasA && !hasB) return -1;
+                    if (!hasA && hasB) return 1;
+                    return a.originalIndex - b.originalIndex;
+                });
+            }
+
+            if (mapped.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="bg-white rounded-3xl p-10 text-center border border-slate-200 text-slate-400">
+                        <p class="text-sm font-semibold">해당 상태의 참가자가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            mapped.forEach((p) => {
+                const idx = p.originalIndex;
+                const isCurrent = p.status === 'current';
+                const isCompleted = p.status === 'completed';
+                const isHold = p.status === 'hold';
+
+                let cardStyle = 'bg-white border-slate-200 hover:border-indigo-300';
+                let badgeHtml = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600">대기 중</span>';
+                let numberStyle = 'bg-slate-100 text-slate-700';
+
+                if (isCurrent) {
+                    cardStyle = 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20 shadow-md';
+                    badgeHtml = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white animate-pulse">진행 중</span>';
+                    numberStyle = 'bg-indigo-600 text-white';
+                } else if (isCompleted) {
+                    cardStyle = 'bg-slate-50/80 border-slate-200';
+                    badgeHtml = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">완료</span>';
+                    numberStyle = 'bg-emerald-100 text-emerald-700';
+                } else if (isHold) {
+                    cardStyle = 'bg-amber-50/40 border-amber-200';
+                    badgeHtml = '<span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-800">결석·보류</span>';
+                    numberStyle = 'bg-amber-100 text-amber-800';
+                }
+
+                let rankBadgeHtml = '';
+                if (p.rank !== null) {
+                    if (p.rank === 1) {
+                        rankBadgeHtml = `<span class="px-2 py-0.5 rounded-md text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300">🥇 1위</span>`;
+                    } else if (p.rank === 2) {
+                        rankBadgeHtml = `<span class="px-2 py-0.5 rounded-md text-xs font-extrabold bg-slate-200 text-slate-800 border border-slate-300">🥈 2위</span>`;
+                    } else if (p.rank === 3) {
+                        rankBadgeHtml = `<span class="px-2 py-0.5 rounded-md text-xs font-extrabold bg-orange-100 text-orange-800 border border-orange-300">🥉 3위</span>`;
+                    } else if (sortMode === 'rank') {
+                        rankBadgeHtml = `<span class="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-600">${p.rank}위</span>`;
+                    }
+                }
+
+                const hasAvg = p.avgScore !== null;
+                const targetJudges = activeJudgeId === 'all'
+                    ? judges
+                    : judges.filter(j => j.id === activeJudgeId);
+
+                const judgeCardsHtml = targetJudges.map(j => {
+                    const scoreVal = getJudgeScore10(p, j.id);
+                    const inputVal = scoreVal !== null ? scoreVal : '';
+
+                    return `
+                        <div class="bg-white border ${scoreVal !== null ? 'border-indigo-300' : 'border-slate-200'} rounded-xl px-2.5 py-2 flex items-center justify-between gap-2">
+                            <span class="text-xs font-extrabold text-slate-700 truncate" title="${escapeHtml(j.name)}">${escapeHtml(j.name)}</span>
+                            <div class="flex items-center gap-1 shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 focus-within:border-indigo-400 focus-within:bg-white">
+                                <input
+                                    type="number"
+                                    id="list-s-${idx}-${j.id}"
+                                    min="0"
+                                    max="10"
+                                    step="0.5"
+                                    value="${inputVal}"
+                                    placeholder="-"
+                                    oninput="updateSingleScore10(${idx}, '${j.id}', this.value)"
+                                    aria-label="${escapeHtml(p.name)} ${escapeHtml(j.name)} 10점 만점 점수"
+                                    class="w-12 text-right font-extrabold text-xs ${inputVal !== '' ? 'text-indigo-700' : 'text-slate-700'} bg-transparent focus:outline-none"
+                                >
+                                <span class="text-[10px] font-semibold text-slate-400">/10</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const card = document.createElement('div');
+                card.className = `rounded-2xl p-4 border transition-all ${cardStyle}`;
+                card.innerHTML = `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div onclick="selectAsCurrent(${idx})" data-call-current="true" class="flex items-center gap-3.5 cursor-pointer group flex-1 min-w-0">
+                            <div class="w-9 h-9 rounded-xl ${numberStyle} font-extrabold text-sm flex items-center justify-center shrink-0 transition-transform group-hover:scale-105" title="클릭하여 상단 채점창에 불러오기 (${idx + 1}번)">
+                                ${idx + 1}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    ${rankBadgeHtml}
+                                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-200/70 text-slate-700">${escapeHtml(p.className)}</span>
+                                    <span class="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                        ${escapeHtml(p.name)}
+                                    </span>
+                                    ${badgeHtml}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2 flex-wrap">
+                            <div id="list-avg-badge-${idx}" class="flex items-center gap-1.5 ${hasAvg ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-slate-50 border-slate-200 text-slate-500'} border rounded-xl px-3 py-1">
+                                <span class="text-[11px] font-bold">평균</span>
+                                <span class="text-sm font-black ${hasAvg ? 'text-indigo-700' : 'text-slate-400'}">${hasAvg ? p.avgScore + '/10' : '-'}</span>
+                                <span class="text-[10px] font-semibold text-slate-400">(${p.scoredJudgeCount}/${judges.length}명)</span>
+                            </div>
+
+                            <select onchange="changeStatus(${idx}, this.value)" data-admin-edit="true" aria-label="상태 변경" class="text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed">
+                                <option value="waiting" ${p.status === 'waiting' ? 'selected' : ''}>대기 중</option>
+                                <option value="current" ${p.status === 'current' ? 'selected' : ''}>진행 중</option>
+                                <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>완료</option>
+                                <option value="hold" ${p.status === 'hold' ? 'selected' : ''}>결석·보류</option>
+                            </select>
+
+                            <div class="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200">
+                                <button type="button" onclick="moveParticipant(${idx}, -1)" data-admin-edit="true" ${idx === 0 ? 'disabled' : ''} title="순서 위로" class="p-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-indigo-600 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                                    ▲
+                                </button>
+                                <button type="button" onclick="moveParticipant(${idx}, 1)" data-admin-edit="true" ${idx === participants.length - 1 ? 'disabled' : ''} title="순서 아래로" class="p-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-indigo-600 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                                    ▼
+                                </button>
+                            </div>
+
+                            <button type="button" onclick="deleteParticipant(${idx})" data-admin-edit="true" title="명단에서 삭제" class="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 심사위원별 10점 만점 단일 항목 입력 영역 -->
+                    <div class="mt-3 pt-2.5 border-t border-slate-200/70">
+                        <div class="flex items-center justify-between mb-1.5 px-0.5">
+                            <span class="text-[11px] font-bold text-indigo-700">📌 평가 기준 (10점 만점): 자신감, 실력, 적합성</span>
+                            <span class="text-[10px] text-slate-400">0.5점 단위 입력 가능</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                            ${judgeCardsHtml}
+                        </div>
+                    </div>
+
+                    <!-- 하단: 곡명, 함께하는 팀원 및 심사 메모 전용 입력란 -->
+                    <div class="mt-2.5 pt-2.5 border-t border-slate-200/70 space-y-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="flex items-center gap-1.5 bg-slate-50/80 rounded-xl px-2.5 py-1.5 border border-slate-200/70 focus-within:border-indigo-400 focus-within:bg-white transition-colors">
+                                <span class="text-xs font-bold text-indigo-600 shrink-0">🎵 곡명:</span>
+                                <input 
+                                    type="text" 
+                                    value="${escapeHtml(p.song || '')}" 
+                                    oninput="updateField(${idx}, 'song', this.value)"
+                                    data-admin-edit="true"
+                                    placeholder="공연 곡명 입력..."
+                                    class="w-full text-xs sm:text-sm bg-transparent focus:outline-none text-slate-800 font-medium placeholder:text-slate-400 disabled:cursor-not-allowed"
+                                >
+                            </div>
+                            <div class="flex items-center gap-1.5 bg-slate-50/80 rounded-xl px-2.5 py-1.5 border border-slate-200/70 focus-within:border-emerald-400 focus-within:bg-white transition-colors">
+                                <span class="text-xs font-bold text-emerald-700 shrink-0">👥 팀원:</span>
+                                <input 
+                                    type="text" 
+                                    value="${escapeHtml(p.teamMembers || '')}" 
+                                    oninput="updateField(${idx}, 'teamMembers', this.value)"
+                                    data-admin-edit="true"
+                                    placeholder="함께하는 사람 이름..."
+                                    class="w-full text-xs sm:text-sm bg-transparent focus:outline-none text-slate-800 font-medium placeholder:text-slate-400 disabled:cursor-not-allowed"
+                                >
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 px-1">
+                            <span class="text-xs text-slate-400 shrink-0">📝 메모:</span>
+                            <input 
+                                type="text" 
+                                value="${escapeHtml(p.memo || '')}" 
+                                oninput="updateField(${idx}, 'memo', this.value)"
+                                data-admin-edit="true"
+                                placeholder="공연 분야(댄스/보컬/밴드), 심사평 등을 입력하세요..."
+                                class="w-full text-xs sm:text-sm bg-transparent border-b border-transparent focus:border-indigo-400 focus:outline-none py-0.5 text-slate-700 placeholder:text-slate-400 disabled:cursor-not-allowed"
+                            >
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+            applyAdminLockUI();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // 특정 참가자를 상단 전광판에 불러오기 (완료 상태는 유지하며 자유롭게 열람·점수 수정 가능)
+        function selectAsCurrent(index) {
+            if (index < 0 || index >= participants.length) return;
+            participants.forEach((p, i) => {
+                if (i === index) {
+                    p.status = 'current';
+                } else if (p.status === 'current') {
+                    p.status = p.completed ? 'completed' : 'waiting';
+                }
+            });
+            saveData();
+            renderAll();
+            resetTimer();
+            const statusSuffix = participants[index].completed ? ' (완료됨 · 점수 수정 가능)' : '';
+            showToast(`${index + 1}번 ${participants[index].className} ${participants[index].name}${statusSuffix}`, '🎤');
+        }
+
+        function changeStatus(index, newStatus) {
+            if (isAdminLocked) {
+                renderAll();
+                showToast('상태 변경은 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            if (newStatus === 'current') {
+                selectAsCurrent(index);
+                return;
+            }
+            participants[index].status = newStatus;
+            participants[index].completed = (newStatus === 'completed');
+            saveData();
+            renderAll();
+        }
+
+        // 현재 선택된 팀의 완료 상태만 별도로 토글
+        function toggleCurrentComplete() {
+            if (isAdminLocked) {
+                showToast('완료 처리는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const currentIndex = participants.findIndex(p => p.status === 'current');
+            if (currentIndex === -1) return;
+
+            const target = participants[currentIndex];
+            target.completed = !target.completed;
+            saveData();
+            renderAll();
+            showToast(
+                target.completed
+                    ? `${currentIndex + 1}번 ${target.name} 팀이 완료 처리되었습니다.`
+                    : `${currentIndex + 1}번 ${target.name} 팀의 완료가 해제되었습니다.`,
+                target.completed ? '✅' : '↩️'
+            );
+        }
+
+        // 완료 여부와 무관하게 언제든 다음 팀으로 이동 (마지막 팀에서는 1번 팀으로 순환)
+        function nextParticipant() {
+            if (participants.length === 0) return;
+            const currentIndex = participants.findIndex(p => p.status === 'current');
+            const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % participants.length;
+            selectAsCurrent(nextIndex);
+        }
+
+        // 완료 여부와 무관하게 언제든 이전 팀으로 이동 (1번 팀에서는 마지막 팀으로 순환)
+        function prevParticipant() {
+            if (participants.length === 0) return;
+            const currentIndex = participants.findIndex(p => p.status === 'current');
+            const prevIndex = currentIndex === -1
+                ? participants.length - 1
+                : (currentIndex - 1 + participants.length) % participants.length;
+            selectAsCurrent(prevIndex);
+        }
+
+        function moveParticipant(index, direction) {
+            if (isAdminLocked) {
+                showToast('순서 변경은 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= participants.length) return;
+
+            const temp = participants[index];
+            participants[index] = participants[newIndex];
+            participants[newIndex] = temp;
+
+            saveData();
+            renderAll();
+            showToast('순서가 변경되었습니다.', '↕️');
+        }
+
+        function updateField(index, field, value) {
+            if (isAdminLocked) {
+                showToast('정보 수정은 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            participants[index][field] = value;
+            saveData();
+            if (participants[index].status === 'current') {
+                renderStageBoard();
+            }
+        }
+
+        function toggleAddForm() {
+            if (isAdminLocked) {
+                showToast('참가자 추가는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const form = document.getElementById('add-participant-form');
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) {
+                document.getElementById('new-class-input').focus();
+            }
+        }
+
+        function addParticipant() {
+            if (isAdminLocked) {
+                showToast('참가자 등록은 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const classInput = document.getElementById('new-class-input');
+            const nameInput = document.getElementById('new-name-input');
+            const songInput = document.getElementById('new-song-input');
+            const teamInput = document.getElementById('new-team-input');
+            const memoInput = document.getElementById('new-memo-input');
+
+            const className = classInput.value.trim() || '기타';
+            const name = nameInput.value.trim();
+            const song = songInput.value.trim();
+            const teamMembers = teamInput.value.trim();
+            const memo = memoInput.value.trim();
+
+            if (!name) {
+                showToast('참가자 이름 또는 팀명을 입력해 주세요.', '⚠️');
+                nameInput.focus();
+                return;
+            }
+
+            const hasCurrent = participants.some(p => p.status === 'current');
+            participants.push({
+                id: 'p_' + Date.now(),
+                className,
+                name,
+                song,
+                teamMembers,
+                status: hasCurrent ? 'waiting' : 'current',
+                completed: false,
+                memo,
+                judgeScores: {}
+            });
+
+            classInput.value = '';
+            nameInput.value = '';
+            songInput.value = '';
+            teamInput.value = '';
+            memoInput.value = '';
+            document.getElementById('add-participant-form').classList.add('hidden');
+
+            saveData();
+            renderAll();
+            showToast(`${className} ${name} 참가자가 추가되었습니다.`, '➕');
+        }
+
+        function deleteParticipant(index) {
+            if (isAdminLocked) {
+                showToast('참가자 삭제는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const target = participants[index];
+            if (!target) return;
+            const wasCurrent = target.status === 'current';
+            participants.splice(index, 1);
+
+            if (wasCurrent && participants.length > 0) {
+                const nextWaiting = participants.find(p => p.status === 'waiting');
+                if (nextWaiting) {
+                    nextWaiting.status = 'current';
+                } else {
+                    participants[0].status = 'current';
+                }
+            }
+
+            saveData();
+            renderAll();
+            showToast(`${target.className} ${target.name} 참가자가 삭제되었습니다.`, '🗑️');
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+            });
+            const activeBtn = document.getElementById(`filter-${filter}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                activeBtn.classList.add('bg-slate-900', 'text-white');
+            }
+            renderList();
+        }
+
+        function setSortMode(mode) {
+            sortMode = mode;
+            const orderBtn = document.getElementById('sort-order-btn');
+            const rankBtn = document.getElementById('sort-rank-btn');
+            if (mode === 'rank') {
+                rankBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition-all flex items-center gap-1';
+                orderBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all';
+            } else {
+                orderBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition-all';
+                rankBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1';
+            }
+            renderList();
+        }
+
+        function renderProgress() {
+            const total = participants.length;
+            const completedCount = participants.filter(p => p.completed || p.status === 'completed').length;
+            const waitingCount = participants.filter(p => !p.completed && p.status !== 'completed' && p.status !== 'hold').length;
+            const holdCount = participants.filter(p => p.status === 'hold').length;
+            const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+            const text = `${completedCount} / ${total}팀 완료 (${percent}%)`;
+            const progressText = document.getElementById('progress-text');
+            const progressBar = document.getElementById('progress-bar');
+            const mobileText = document.getElementById('mobile-progress-text');
+            const mobileBar = document.getElementById('mobile-progress-bar');
+
+            if (progressText) progressText.textContent = text;
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            if (mobileText) mobileText.textContent = text;
+            if (mobileBar) mobileBar.style.width = `${percent}%`;
+
+            const countAll = document.getElementById('count-all');
+            const countWaiting = document.getElementById('count-waiting');
+            const countCompleted = document.getElementById('count-completed');
+            const countHold = document.getElementById('count-hold');
+
+            if (countAll) countAll.textContent = total;
+            if (countWaiting) countWaiting.textContent = waitingCount;
+            if (countCompleted) countCompleted.textContent = completedCount;
+            if (countHold) countHold.textContent = holdCount;
+        }
+
+        // ================= 심사위원 관리 및 10점 만점 채점 =================
+        function openJudgeModal() {
+            renderJudgeManageList();
+            const modal = document.getElementById('judge-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeJudgeModal() {
+            const modal = document.getElementById('judge-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function renderJudgeManageList() {
+            const listEl = document.getElementById('judge-manage-list');
+            if (!listEl) return;
+
+            listEl.innerHTML = judges.map((j, idx) => `
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                    <span class="text-xs font-extrabold text-indigo-600 w-6">${idx + 1}번</span>
+                    <input
+                        id="modal-judge-name-input-${j.id}"
+                        type="text"
+                        value="${escapeHtml(j.name)}"
+                        oninput="renameJudge('${j.id}', this.value, 'modal-judge-name-input-${j.id}')"
+                        class="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+                    >
+                    <button
+                        type="button"
+                        data-admin-only="true"
+                        onclick="removeJudge('${j.id}')"
+                        ${judges.length <= 1 ? 'disabled' : ''}
+                        title="심사위원 삭제 (관리자 전용)"
+                        class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                    >
+                        삭제
+                    </button>
+                </div>
+            `).join('');
+            applyAdminLockUI();
+        }
+
+        function addJudge() {
+            if (isAdminLocked) {
+                showToast('심사위원 추가는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const input = document.getElementById('new-judge-name');
+            const name = input.value.trim() || `심사위원 ${judges.length + 1}`;
+            judges.push({
+                id: 'j_' + Date.now(),
+                name
+            });
+            input.value = '';
+            saveData();
+            renderJudgeManageList();
+            renderAll();
+            showToast(`${name}님이 추가되었습니다.`, '👨‍⚖️');
+        }
+
+        function renameJudge(judgeId, newName, sourceInputId) {
+            const target = judges.find(j => j.id === judgeId);
+            if (!target) return;
+            target.name = newName.trim() || '심사위원';
+            saveData();
+
+            const headerJudgeCount = document.getElementById('header-judge-count');
+            if (headerJudgeCount) headerJudgeCount.textContent = judges.length;
+            renderStageJudgeTabs();
+            renderList();
+
+            const quickId = `quick-judge-name-input-${judgeId}`;
+            const modalId = `modal-judge-name-input-${judgeId}`;
+            if (sourceInputId !== quickId) {
+                const quickEl = document.getElementById(quickId);
+                if (quickEl && document.activeElement !== quickEl) {
+                    quickEl.value = target.name;
+                }
+            }
+            if (sourceInputId !== modalId) {
+                const modalEl = document.getElementById(modalId);
+                if (modalEl && document.activeElement !== modalEl) {
+                    modalEl.value = target.name;
+                }
+            }
+            applyAdminLockUI();
+        }
+
+        function removeJudge(judgeId) {
+            if (isAdminLocked) {
+                showToast('심사위원 삭제는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            if (judges.length <= 1) {
+                showToast('최소 1명의 심사위원이 필요합니다.', '⚠️');
+                return;
+            }
+            judges = judges.filter(j => j.id !== judgeId);
+            if (activeJudgeId === judgeId) {
+                activeJudgeId = 'all';
+            }
+            saveData();
+            renderJudgeManageList();
+            renderAll();
+            showToast('심사위원이 삭제되었습니다.', '🗑️');
+        }
+
+        function stepJudgeCount(delta) {
+            if (isAdminLocked) {
+                showToast('심사위원 인원 변경은 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            setJudgeCount(judges.length + delta);
+        }
+
+        function setJudgeCount(rawCount) {
+            if (isAdminLocked) {
+                renderAll();
+                showToast('심사위원 인원 변경은 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            let targetCount = parseInt(rawCount, 10);
+            if (isNaN(targetCount)) {
+                renderAll();
+                return;
+            }
+            if (targetCount < 1) {
+                targetCount = 1;
+                showToast('심사위원은 최소 1명 이상이어야 합니다.', '⚠️');
+            } else if (targetCount > 20) {
+                targetCount = 20;
+                showToast('심사위원은 최대 20명까지 설정할 수 있습니다.', '⚠️');
+            }
+
+            if (targetCount === judges.length) {
+                renderAll();
+                return;
+            }
+
+            const prevCount = judges.length;
+            if (targetCount > prevCount) {
+                const toAdd = targetCount - prevCount;
+                for (let i = 0; i < toAdd; i++) {
+                    const num = judges.length + 1;
+                    judges.push({
+                        id: 'j_' + Date.now() + '_' + i,
+                        name: `심사위원 ${num}`
+                    });
+                }
+                showToast(`심사위원이 ${targetCount}명으로 늘었습니다.`, '👨‍⚖️');
+            } else {
+                const removed = judges.splice(targetCount);
+                const removedIds = new Set(removed.map(j => j.id));
+                if (removedIds.has(activeJudgeId)) {
+                    activeJudgeId = 'all';
+                }
+                participants.forEach(p => {
+                    if (p.judgeScores) {
+                        removedIds.forEach(rid => delete p.judgeScores[rid]);
+                    }
+                });
+                showToast(`심사위원이 ${targetCount}명으로 줄었습니다.`, '👨‍⚖️');
+            }
+
+            saveData();
+            if (!document.getElementById('judge-modal').classList.contains('hidden')) {
+                renderJudgeManageList();
+            }
+            renderAll();
+        }
+
+        function handleStageScore10Input(judgeId, rawVal) {
+            const currentIndex = participants.findIndex(p => p.status === 'current');
+            if (currentIndex === -1) return;
+            applySingleScore10(currentIndex, judgeId, rawVal, `stage-s-${judgeId}`);
+        }
+
+        function updateSingleScore10(index, judgeId, rawVal) {
+            applySingleScore10(index, judgeId, rawVal, `list-s-${index}-${judgeId}`);
+        }
+
+        function applySingleScore10(index, judgeId, rawVal, sourceInputId) {
+            const parsed = (rawVal === '' || rawVal === null || rawVal === undefined)
+                ? null
+                : clampScore10(Number(rawVal));
+
+            if (!participants[index].judgeScores) {
+                participants[index].judgeScores = {};
+            }
+            participants[index].judgeScores[judgeId] = parsed;
+
+            const srcEl = document.getElementById(sourceInputId);
+            if (srcEl && parsed !== null && Number(rawVal) !== parsed && document.activeElement !== srcEl) {
+                srcEl.value = parsed;
+            }
+
+            saveData();
+            renderScoreSummary();
+            updateListCardAvgBadge(index);
+
+            if (participants[index].status === 'current') {
+                const counterpartId = sourceInputId.startsWith('stage-')
+                    ? `list-s-${index}-${judgeId}`
+                    : `stage-s-${judgeId}`;
+                const counterpartEl = document.getElementById(counterpartId);
+                if (counterpartEl && document.activeElement !== counterpartEl) {
+                    counterpartEl.value = parsed !== null ? parsed : '';
+                }
+                updateStageScoreStatsDisplay(participants[index]);
+            }
+
+            if (sortMode === 'rank') {
+                renderList();
+            }
+        }
+
+        function updateListCardAvgBadge(index) {
+            const badgeEl = document.getElementById(`list-avg-badge-${index}`);
+            if (!badgeEl) return;
+            const stats = getParticipantScoreStats(participants[index]);
+            const hasAvg = stats.avg !== null;
+            badgeEl.className = `flex items-center gap-1.5 ${hasAvg ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-slate-50 border-slate-200 text-slate-500'} border rounded-xl px-3 py-1`;
+            badgeEl.innerHTML = `
+                <span class="text-[11px] font-bold">평균</span>
+                <span class="text-sm font-black ${hasAvg ? 'text-indigo-700' : 'text-slate-400'}">${hasAvg ? stats.avg + '/10' : '-'}</span>
+                <span class="text-[10px] font-semibold text-slate-400">(${stats.count}/${stats.totalJudges}명)</span>
+            `;
+        }
+
+        // ================= 결과 내보내기 (복사 & CSV 다운로드) =================
+        function getStatusLabel(status) {
+            const map = {
+                waiting: '대기 중',
+                current: '진행 중',
+                completed: '완료',
+                hold: '결석·보류'
+            };
+            return map[status] || status;
+        }
+
+        function copyResultsToClipboard() {
+            const rankMap = calculateRankMap();
+            const judgeHeaders = judges.map(j => `${j.name}(10점·자신감/실력/적합성)`);
+            const header = ['순번', '학급', '대표이름', '곡명', '함께하는팀원', '상태', ...judgeHeaders, '평균점수(10점)', '순위', '심사메모'].join('\t');
+            const rows = participants.map((p, idx) => {
+                const stats = getParticipantScoreStats(p);
+                const judgeCols = judges.map(j => {
+                    const s = getJudgeScore10(p, j.id);
+                    return s !== null ? `${s}` : '-';
+                });
+                const avgStr = stats.avg !== null ? `${stats.avg}` : '-';
+                const rankStr = rankMap[p.id] ? `${rankMap[p.id]}위` : '-';
+                return [
+                    idx + 1,
+                    p.className,
+                    p.name,
+                    (p.song || '').replace(/\n/g, ' '),
+                    (p.teamMembers || '').replace(/\n/g, ' '),
+                    getStatusLabel(p.status),
+                    ...judgeCols,
+                    avgStr,
+                    rankStr,
+                    (p.memo || '').replace(/\n/g, ' ')
+                ].join('\t');
+            });
+
+            const text = [header, ...rows].join('\n');
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('10점 만점 심사 결과 표가 복사되었습니다!', '📋');
+            } catch (e) {
+                showToast('복사에 실패했습니다.', '⚠️');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function downloadCSV() {
+            const rankMap = calculateRankMap();
+            const judgeHeaders = judges.map(j => `"${String(j.name).replace(/"/g, '""')}_점수(10점·자신감/실력/적합성)"`);
+            const headers = ['순번', '학급', '대표이름', '곡명', '함께하는팀원', '상태', ...judgeHeaders, '평균점수(10점)', '순위', '심사메모'];
+            const csvRows = [headers.join(',')];
+
+            participants.forEach((p, idx) => {
+                const stats = getParticipantScoreStats(p);
+                const judgeCols = judges.map(j => {
+                    const s = getJudgeScore10(p, j.id);
+                    return s !== null ? s : '';
+                });
+                const avgStr = stats.avg !== null ? stats.avg : '';
+                const rankStr = rankMap[p.id] ? `${rankMap[p.id]}위` : '';
+                const safeName = `"${String(p.name || '').replace(/"/g, '""')}"`;
+                const safeSong = `"${String(p.song || '').replace(/"/g, '""')}"`;
+                const safeTeam = `"${String(p.teamMembers || '').replace(/"/g, '""')}"`;
+                const safeMemo = `"${String(p.memo || '').replace(/"/g, '""')}"`;
+                csvRows.push([
+                    idx + 1,
+                    p.className,
+                    safeName,
+                    safeSong,
+                    safeTeam,
+                    getStatusLabel(p.status),
+                    ...judgeCols,
+                    avgStr,
+                    rankStr,
+                    safeMemo
+                ].join(','));
+            });
+
+            const bom = '\uFEFF';
+            const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const today = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `졸업공연_오디션_결과_${today}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('CSV 파일이 다운로드되었습니다.', '💾');
+        }
+
+        // ================= 오디션 타이머 기능 =================
+        function setTimerPreset(seconds) {
+            stopTimer();
+            timerPreset = seconds;
+            timerSeconds = seconds;
+            const modeLabel = document.getElementById('timer-mode-label');
+            if (seconds === 0) {
+                modeLabel.textContent = '카운트업 (경과 시간)';
+                modeLabel.className = 'text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600';
+            } else {
+                modeLabel.textContent = `카운트다운 (${Math.floor(seconds / 60)}분 제한)`;
+                modeLabel.className = 'text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600';
+            }
+            updateTimerDisplay();
+        }
+
+        function toggleTimer() {
+            if (isTimerRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            if (isTimerRunning) return;
+            if (timerPreset > 0 && timerSeconds <= 0) {
+                timerSeconds = timerPreset;
+            }
+            isTimerRunning = true;
+            const btn = document.getElementById('timer-toggle-btn');
+            btn.textContent = '일시정지';
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+
+            timerInterval = setInterval(() => {
+                if (timerPreset === 0) {
+                    timerSeconds++;
+                } else {
+                    if (timerSeconds > 0) {
+                        timerSeconds--;
+                    } else {
+                        stopTimer();
+                        showToast('설정된 오디션 시간이 종료되었습니다!', '⏰');
+                    }
+                }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            const btn = document.getElementById('timer-toggle-btn');
+            btn.textContent = '시작';
+            btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = timerPreset;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60);
+            const secs = timerSeconds % 60;
+            const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            const display = document.getElementById('timer-display');
+            display.textContent = formatted;
+
+            if (timerPreset > 0 && timerSeconds <= 10 && timerSeconds >= 0) {
+                display.classList.add('text-rose-600');
+                display.classList.remove('text-slate-900');
+            } else {
+                display.classList.remove('text-rose-600');
+                display.classList.add('text-slate-900');
+            }
+        }
+
+        // ================= 초기화 모달 =================
+        function openResetModal() {
+            if (isAdminLocked) {
+                showToast('초기화는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            const modal = document.getElementById('reset-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('reset-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function confirmReset() {
+            if (isAdminLocked) {
+                closeResetModal();
+                showToast('초기화는 관리자 잠금 해제 후 가능합니다.', '🔒');
+                return;
+            }
+            participants = JSON.parse(JSON.stringify(INITIAL_PARTICIPANTS));
+            saveData();
+            resetTimer();
+            setFilter('all');
+            renderAll();
+            closeResetModal();
+            showToast('초기 13명 명단으로 복원되었습니다.', '🔄');
+        }
+    </script>
+</body>
+</html>
